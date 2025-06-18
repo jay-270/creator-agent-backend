@@ -1,8 +1,24 @@
 const express = require('express');
 const admin = require('firebase-admin');
 require('dotenv').config();
+const cors = require('cors');
 const app = express();
+
+// Enable CORS for specific origins
+const allowedOrigins = ['http://localhost:3001', 'https://YOUR_VERCEL_URL']; // Add your Vercel URL after deployment
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST'],
+  credentials: true
+}));
 app.use(express.json());
+
 admin.initializeApp({
   credential: admin.credential.cert({
     projectId: process.env.FIREBASE_PROJECT_ID,
@@ -11,6 +27,7 @@ admin.initializeApp({
   }),
   databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}.firebaseio.com`,
 });
+
 app.get('/', (req, res) => res.json({ message: 'Hello, Agent!' }));
 app.post('/signup', async (req, res) => {
   const { uid, name, email, niche, audience } = req.body;
@@ -34,5 +51,6 @@ app.get('/agents', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Server running on port ${port}`));
